@@ -151,9 +151,18 @@ class ChatViewModel(handle: SavedStateHandle) : ViewModel() {
 					}
 
 					response.code() == 503 -> {
-						val missing = parseMissingSlots(response)
-						_missingSlots.value = missing
-						_error.value = "Модели не настроены: ${missing.joinToString(", ")}"
+						val info = parseRefusal(response)
+						when (info.code) {
+							"provider_key_missing" -> {
+								_error.value = "Нет ключа провайдера ${info.provider} — добавь его: Настройки → Ключи API"
+								_missingSlots.value = emptyList()
+							}
+
+							else -> {
+								_missingSlots.value = info.missing
+								_error.value = "Модели не настроены: ${info.missing.joinToString(", ")}"
+							}
+						}
 					}
 
 					else -> _error.value = "HTTP ${response.code()}: ${response.message()}"
@@ -215,11 +224,23 @@ class ChatViewModel(handle: SavedStateHandle) : ViewModel() {
 		}
 	}
 
-	private fun parseMissingSlots(response: retrofit2.Response<*>): List<String> = runCatching {
-		val body = response.errorBody()?.string() ?: return emptyList()
+	/** 503 envelope: {error, code: models_not_configured|provider_key_missing,
+	 *  missing?: slots[], provider?} — src/core/settings.ts. */
+	private fun parseRefusal(response: retrofit2.Response<*>): Refusal = runCatching {
+		val body = response.errorBody()?.string() ?: return Refusal(emptyList(), null, null)
 		val obj = LhClient.json().parseToJsonElement(body).jsonObject
-		obj["missing"]?.jsonArray?.mapNotNull { it.jsonPrimitive.contentOrNull } ?: emptyList()
-	}.getOrDefault(emptyList())
+		Refusal(
+			code = obj["code"]?.jsonPrimitive?.contentOrNull,
+			provider = obj["provider"]?.jsonPrimitive?.contentOrNull,
+			missing = obj["missing"]?.jsonArray?.mapNotNull { it.jsonPrimitive.contentOrNull } ?: emptyList(),
+		)
+	}.getOrDefault(Refusal(emptyList(), null, null))
+
+	private data class Refusal(
+		val missing: List<String>,
+		val code: String?,
+		val provider: String?,
+	)
 
 	override fun onCleared() {
 		streamJob?.cancel()

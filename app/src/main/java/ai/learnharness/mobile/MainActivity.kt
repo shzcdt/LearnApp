@@ -41,7 +41,13 @@ class MainActivity : ComponentActivity() {
 						)
 					}
 					composable("settings") {
-						SettingsScreen(onBack = { nav.popBackStack() })
+						SettingsScreen(
+							onBack = { nav.popBackStack() },
+							onOpenKeys = { nav.navigate("keys") },
+						)
+					}
+					composable("keys") {
+						ai.learnharness.mobile.ui.keys.KeysScreen(onBack = { nav.popBackStack() })
 					}
 				}
 			}

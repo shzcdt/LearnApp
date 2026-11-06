@@ -2,8 +2,10 @@ package ai.learnharness.mobile.data.api
 
 import retrofit2.Response
 import retrofit2.http.Body
+import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.POST
+import retrofit2.http.PUT
 import retrofit2.http.Path
 
 /**
@@ -32,9 +34,21 @@ interface LhApi {
 	@GET("api/models")
 	suspend fun models(): RawJson
 
+	@GET("api/keys")
+	suspend fun keys(): RawJson
+
+	@PUT("api/keys/{id}")
+	suspend fun putKey(@Path("id") id: String, @Body body: KeyValueBody): Response<RawJson>
+
+	@DELETE("api/keys/{id}")
+	suspend fun deleteKey(@Path("id") id: String): Response<RawJson>
+
 	@POST("api/chats")
 	suspend fun createChat(@Body body: CreateChatBody): RawJson
 }
+
+@kotlinx.serialization.Serializable
+data class KeyValueBody(val value: String)
 
 @kotlinx.serialization.Serializable
 data class SteerBody(val input: SteerInput)

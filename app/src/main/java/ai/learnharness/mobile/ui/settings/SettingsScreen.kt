@@ -28,6 +28,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 @Composable
 fun SettingsScreen(
 	onBack: () -> Unit,
+	onOpenKeys: () -> Unit = {},
 	vm: SettingsViewModel = viewModel(),
 ) {
 	val serverUrl by vm.serverUrl.collectAsState()
@@ -82,6 +83,9 @@ fun SettingsScreen(
 					enabled = !checking,
 					modifier = Modifier.padding(start = 12.dp),
 				) { Text(if (checking) "Проверяю…" else "Проверить") }
+			}
+			OutlinedButton(onClick = onOpenKeys, modifier = Modifier.padding(top = 12.dp)) {
+				Text("Ключи API (BYOK)")
 			}
 			if (status != null) {
 				Text(
