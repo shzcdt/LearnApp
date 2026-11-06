@@ -33,6 +33,8 @@ class LhRepository(
 
 	fun sessions(): Flow<List<SessionEntity>> = dao.sessions()
 
+	fun session(id: String): Flow<SessionEntity?> = dao.sessionById(id)
+
 	/** Notify→fetch: the UI calls this on start, on manual refresh, and later on SSE events. */
 	suspend fun refreshSessions() {
 		ensureConfigured()

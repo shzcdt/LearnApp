@@ -37,6 +37,9 @@ interface LhDao {
 	@Query("SELECT * FROM sessions ORDER BY updatedAt DESC")
 	fun sessions(): Flow<List<SessionEntity>>
 
+	@Query("SELECT * FROM sessions WHERE id = :id")
+	fun sessionById(id: String): Flow<SessionEntity?>
+
 	@Insert(onConflict = OnConflictStrategy.REPLACE)
 	suspend fun putSessions(sessions: List<SessionEntity>)
 
