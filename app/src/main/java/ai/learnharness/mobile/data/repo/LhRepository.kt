@@ -39,7 +39,7 @@ class LhRepository(
 		val chats = LhClient.api.chats().chats
 		// clear+put drops chats deleted on the server; tiny table, no need to diff
 		dao.clearSessions()
-		dao.putSessions(MessageParser.parseSessions(chats.map { it as kotlinx.serialization.json.JsonElement }))
+		dao.putSessions(MessageParser.parseSessions(chats))
 	}
 
 	fun messages(chatId: String): Flow<List<MessageEntity>> = dao.messages(chatId)

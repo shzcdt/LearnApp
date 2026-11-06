@@ -8,8 +8,6 @@ import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonArray
-import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.jsonPrimitive
 
 /**
  * Maps loose server JSON onto app entities. The wire format is pi-native:
@@ -19,19 +17,17 @@ import kotlinx.serialization.json.jsonPrimitive
  */
 object MessageParser {
 
-	fun parseSessions(json: List<JsonElement>): List<SessionEntity> =
-		json.mapNotNull { el ->
-			val o = el as? JsonObject ?: return@mapNotNull null
-			val id = o.str("id") ?: return@mapNotNull null
+	fun parseSessions(chats: List<ChatDto>): List<SessionEntity> =
+		chats.map { c ->
 			SessionEntity(
-				id = id,
-				title = o.str("title") ?: id,
-				kind = o.str("kind") ?: "teach",
-				updatedAt = o.str("updatedAt"),
-				messageCount = o.int("messageCount") ?: 0,
-				pendingQuestion = o.bool("pendingQuestion") ?: false,
-				pendingProblem = o.bool("pendingProblem") ?: false,
-				busy = o.bool("busy") ?: false,
+				id = c.id,
+				title = c.title,
+				kind = c.kind ?: "teach",
+				updatedAt = c.updatedAt,
+				messageCount = c.messageCount ?: 0,
+				pendingQuestion = c.pendingQuestion ?: false,
+				pendingProblem = c.pendingProblem ?: false,
+				busy = c.busy ?: false,
 			)
 		}
 
@@ -101,12 +97,6 @@ object MessageParser {
 
 private fun JsonObject.str(key: String): String? =
 	(this[key] as? JsonElement)?.let { (it as? kotlinx.serialization.json.JsonPrimitive)?.contentOrNull }
-
-private fun JsonObject.int(key: String): Int? =
-	str(key)?.toIntOrNull()
-
-private fun JsonObject.bool(key: String): Boolean? =
-	str(key)?.toBooleanStrictOrNull()
 
 private fun JsonObject.arr(key: String): JsonArray =
 	(this[key] as? JsonArray) ?: JsonArray(emptyList())
