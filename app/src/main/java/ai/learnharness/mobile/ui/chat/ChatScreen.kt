@@ -85,7 +85,11 @@ fun ChatScreen(
 		last == null || last.index >= listState.layoutInfo.totalItemsCount - 2
 	} }
 	LaunchedEffect(tailCount, live?.rows?.size) {
-		if (atBottom) listState.animateScrollToItem(listState.layoutInfo.totalItemsCount - 1)
+		// layout may not have produced items yet — scrolling to -1 crashes
+		val count = listState.layoutInfo.totalItemsCount
+		if (atBottom && count > 0) {
+			runCatching { listState.animateScrollToItem(count - 1) }
+		}
 	}
 
 	Scaffold(
@@ -241,14 +245,15 @@ fun ChatScreen(
 					MessageRow(m)
 				}
 				// the live turn: rows replace every frame
-				if (live != null) {
-					items(live!!.rows) { row ->
+				val currentLive = live
+				if (currentLive != null) {
+					items(currentLive.rows) { row ->
 						LiveRowView(row)
 					}
-					if (live?.toolName != null) {
+					if (currentLive.toolName != null) {
 						item {
 							Text(
-								"⚙ ${live?.toolName}",
+								"⚙ ${currentLive.toolName}",
 								style = MaterialTheme.typography.labelSmall,
 								color = MaterialTheme.colorScheme.onSurfaceVariant,
 							)
