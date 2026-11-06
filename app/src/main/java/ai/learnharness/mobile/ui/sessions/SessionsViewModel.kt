@@ -27,6 +27,7 @@ class SessionsViewModel : ViewModel() {
 
 	init {
 		refresh()
+		observeBus()
 	}
 
 	fun setFilter(f: String) {
@@ -48,6 +49,20 @@ class SessionsViewModel : ViewModel() {
 				_error.value = e.message ?: e.javaClass.simpleName
 			} finally {
 				_refreshing.value = false
+			}
+		}
+	}
+
+	/** notify→fetch: any bus fact refreshes the list (250ms debounce, like the web). */
+	private var pendingRefresh: kotlinx.coroutines.Job? = null
+	private fun observeBus() {
+		viewModelScope.launch {
+			ServiceLocator.events.events.collect {
+				pendingRefresh?.cancel()
+				pendingRefresh = viewModelScope.launch {
+					kotlinx.coroutines.delay(250)
+					runCatching { repo.refreshSessions() }
+				}
 			}
 		}
 	}

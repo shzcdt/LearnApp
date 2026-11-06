@@ -54,20 +54,23 @@ object MessageParser {
 							out += line(chatId, idx++, "tool", name, "toolCall")
 						}
 					}
-					val text = concatText(m)
-					val thinking = concatBlockField(m, "thinking")
-					if (text.isNotBlank()) out += line(chatId, idx++, "assistant", text, null)
-					// thinking is folded for now; kept in mind for a later reveal-UI
-					if (thinking.isNotBlank() && text.isBlank()) {
-						out += line(chatId, idx++, "assistant", thinking, "thinking")
+					// thinking blocks render as collapsible rows, in order
+					for (block in m.arr("content")) {
+						val b = block as? JsonObject ?: continue
+						if (b.str("type") == "thinking") {
+							val t = (b.str("thinking") ?: "").trim()
+							if (t.isNotBlank()) out += line(chatId, idx++, "thinking", t, "AGENT'S THINKING")
+						}
 					}
+					val text = convertMathDelims(concatText(m))
+					if (text.isNotBlank()) out += line(chatId, idx++, "assistant", text, null)
 				}
 
 				"custom" -> {
 					val display = m.str("display")
 					val text = display ?: concatText(m)
 					if (text.isNotBlank()) {
-						out += line(chatId, idx++, "custom", text, m.str("customType") ?: "block")
+						out += line(chatId, idx++, "custom", convertMathDelims(text), m.str("customType") ?: "block")
 					}
 				}
 
@@ -86,6 +89,16 @@ object MessageParser {
 			.filter { it.str("type") == "text" }
 			.joinToString("") { it.str("text") ?: "" }
 			.trim()
+
+	/**
+	 * The web client renders legacy LaTeX delimiters via transformMathDelimiters
+	 * (src/core/math-delims.ts): \(x\) → $x$, \[x\] → $$x$$. Same conversion here,
+	 * before the text reaches Markwon.
+	 */
+	private fun convertMathDelims(text: String): String =
+		text
+			.replace(Regex("\\\\\\((.+?)\\\\\\)")) { match -> "\$${match.groupValues[1]}\$" }
+			.replace(Regex("\\\\\\[(.+?)\\\\]")) { match -> "\$\$${match.groupValues[1]}\$\$" }
 
 	private fun concatBlockField(message: JsonObject, field: String): String =
 		message.arr("content")

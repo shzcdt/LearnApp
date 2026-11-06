@@ -17,6 +17,11 @@ class MainActivity : ComponentActivity() {
 		super.onCreate(savedInstanceState)
 		setContent {
 			LearnHarnessTheme {
+				// configure from DataStore once, then keep the notification bus alive
+				androidx.compose.runtime.LaunchedEffect(Unit) {
+					runCatching { ServiceLocator.repository.ensureConfigured() }
+					ServiceLocator.events.start()
+				}
 				val nav = rememberNavController()
 				NavHost(navController = nav, startDestination = "sessions") {
 					composable("sessions") {
